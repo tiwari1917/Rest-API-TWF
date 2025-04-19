@@ -38,5 +38,5 @@ def min_cost(product_request: ProductRequest):
             warehouses = PRODUCT_WAREHOUSE_MAPPING.get(product, [])
             used_warehouses.update(warehouses)
 
-    total_cost = sum(WAREHOUSE_COST[wh] for wh in used_warehouses)
+    total_price = sum(WAREHOUSE_COST[wh] for wh in used_warehouses)
     return {"price": total_price}
