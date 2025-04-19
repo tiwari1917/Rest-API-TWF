@@ -1,67 +1,42 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import RootModel
 
 app = FastAPI()
 
-# Travel costs per one-way trip
-cost_table = {
-    'C1': 10,
-    'C2': 20,
-    'C3': 18
+PRODUCT_WAREHOUSE_MAPPING = {
+    "A": ["C1"],
+    "B": ["C1"],
+    "C": ["C2"],
+    "D": ["C3"],
+    "E": ["C3"],
+    "F": ["C3"],
+    "G": ["C2"],
+    "H": ["C2"],
+    "I": ["C2"]
 }
 
-# Product availability
-center_products = {
-    'C1': ['A', 'B', 'C'],
-    'C2': ['D', 'E', 'F'],
-    'C3': ['G', 'H', 'I']
+WAREHOUSE_COST = {
+    "C1": 50,
+    "C2": 36, 
+    "C3": 82  
 }
 
-class Order(BaseModel):
-    A: int = 0
-    B: int = 0
-    C: int = 0
-    D: int = 0
-    E: int = 0
-    F: int = 0
-    G: int = 0
-    H: int = 0
-    I: int = 0
 
-def calculate_min_cost(order):
-    possible_costs = []
+class ProductRequest(RootModel[dict[str, int]]):
+    pass
 
-    for start_center in ['C1', 'C2', 'C3']:
-        total_cost = 0
-        current_location = start_center
-        centers_needed = set()
 
-        # Find which centers we need to visit based on order
-        for product, quantity in order.items():
-            if quantity > 0:
-                for center, products in center_products.items():
-                    if product in products:
-                        centers_needed.add(center)
+@app.post("/min-cost")
+def min_cost(product_request: ProductRequest):
+    product_quantities = product_request.root
 
-        visited = set()
+    
+    used_warehouses = set()
 
-        # Simulate visiting each center and dropping to L1
-        for center in centers_needed:
-            if center != current_location:
-                total_cost += abs(cost_table[current_location] - cost_table[center])
-                current_location = center
-            total_cost += cost_table[center]*2  # Go to L1 and come back
+    for product, quantity in product_quantities.items():
+        if quantity > 0:
+            warehouses = PRODUCT_WAREHOUSE_MAPPING.get(product, [])
+            used_warehouses.update(warehouses)
 
-        # Finally, drop remaining items to L1
-        if current_location != 'L1':
-            total_cost += cost_table[current_location]
-
-        possible_costs.append(total_cost)
-
-    return min(possible_costs)
-
-@app.post("/calculate-cost")
-def get_cost(order: Order):
-    order_dict = order.dict()
-    min_cost = calculate_min_cost(order_dict)
-    return {"minimum_cost": min_cost}
+    total_cost = sum(WAREHOUSE_COST[wh] for wh in used_warehouses)
+    return {"price": total_price}
