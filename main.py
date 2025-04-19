@@ -3,7 +3,13 @@ from pydantic import RootModel
 
 app = FastAPI()
 
-PRODUCT_WAREHOUSE_MAPPING = {
+
+COSTS = {
+    "C1": 50,
+    "C2": 36, 
+    "C3": 82  
+}
+MAPPING = {
     "A": ["C1"],
     "B": ["C1"],
     "C": ["C2"],
@@ -15,28 +21,23 @@ PRODUCT_WAREHOUSE_MAPPING = {
     "I": ["C2"]
 }
 
-WAREHOUSE_COST = {
-    "C1": 50,
-    "C2": 36, 
-    "C3": 82  
-}
 
 
-class ProductRequest(RootModel[dict[str, int]]):
+class Request_Item(RootModel[dict[str, int]]):
     pass
 
 
 @app.post("/min-cost")
-def min_cost(product_request: ProductRequest):
-    product_quantities = product_request.root
+def min_cost(item: Request_Item):
+    quantities = item.root
 
     
-    used_warehouses = set()
+    warehouses = set()
 
-    for product, quantity in product_quantities.items():
+    for product, quantity in quantities.items():
         if quantity > 0:
-            warehouses = PRODUCT_WAREHOUSE_MAPPING.get(product, [])
-            used_warehouses.update(warehouses)
+            ans = MAPPING.get(product, [])
+            warehouses.update(ans)
 
-    total_price = sum(WAREHOUSE_COST[wh] for wh in used_warehouses)
+    total_price = sum(COSTS[wh] for wh in warehouses)
     return {"price": total_price}
